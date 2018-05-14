@@ -1,0 +1,15 @@
+#! /bin/bash
+
+JOBID=$1
+OUTPUT=$2
+Run="    job_state = R"
+Que="    job_state = Q"
+
+STATUS="$(qstat -f  $JOBID | grep "job_state")"
+
+case "$STATUS" in
+	$Que) echo "Your job is in the queue" ;;
+	$Run) echo "Your job is still running" ;;
+	*) echo "This means that the job is complete"
+           echo "$(cat $OUTPUT)" ;;
+esac
