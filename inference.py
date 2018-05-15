@@ -6,6 +6,8 @@ import time
 import matplotlib.pyplot as plt
 import os
 import glob
+import requests
+import shutil
 from scipy.misc import imread, imresize
 from NHWC_hs_model import NHWC_hs_model
 import IPython.display
@@ -33,17 +35,24 @@ def infer_validate():
     
 
 #Inference_________________________________________________________
-def infer():
-    img_path = "input-image.jpg"
+def infer(in_image="input-image.jpg"):
+    img_path = in_image
     image1 = cv2.imread(img_path)
     image1 = cv2.cvtColor(image1, cv2.COLOR_BGR2RGB)
     image2 = cv2.resize(image1, (48, 48), interpolation=cv2.INTER_CUBIC)
     image2 = np.reshape(image2, (1, 48, 48, 3)).astype(np.float32)  # image is ready
     return image1, image2
+   
+
+
+def download_image(url):
+    response = requests.get(url, stream=True)
+    with open('web-image.jpg', 'wb') as outfile:
+        shutil.copyfileobj(response.raw, outfile)
+    del response 
+    return
     
-    
-    
-def visualize(source="validate_dataset"):
+def visualize(source="validate_dataset", url=" "):
     image = tf.placeholder(tf.float32, (1, 48, 48, 3))
     output = NHWC_hs_model(image, 1.0)
     output_r = tf.round(output)
@@ -59,6 +68,9 @@ def visualize(source="validate_dataset"):
     saver.restore(sess, "weights/NHWC_train_hs_val_1000.ckpt")      
     if source=="validate_dataset":
         orig_image, image_in, orig_mask = infer_validate()    
+    elif source=="url":
+        download_image(url)
+        orig_image, image_in = infer("web-image.jpg")    
     else:
         orig_image, image_in = infer()
     image_in_norm = image_in/255.0
